@@ -1,16 +1,19 @@
-# offline_chat_app
+# Offline Chat App
 
-A new Flutter project.
+A Flutter-based Bluetooth offline chat application.  
+Supports Android and iOS.  
 
-## Getting Started
+## Features
+- Offline chat using Bluetooth/BLE
+- Device scanning
+- Peer-to-peer connection
+- Sending/receiving messages without internet
 
-This project is a starting point for a Flutter application.
+## Branches
+- `main` — production-ready
+- `dev` — active development
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Technologies
+- Flutter
+- Dart
+- Bluetooth (BLE or Classic)

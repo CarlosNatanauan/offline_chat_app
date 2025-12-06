@@ -119,15 +119,13 @@ Just phone → phone.
 
 ## 📲 Screenshots
 
-**Screenshots folder:**  
-https://drive.google.com/drive/folders/1EgKYBsfgLtjezxv6S931DDqtQqHg2XrN?usp=sharing
+[![Screenshots Folder](https://img.shields.io/badge/📁%20View%20Screenshots-4285F4?style=for-the-badge&logo=google-drive&logoColor=white)](https://drive.google.com/drive/folders/1EgKYBsfgLtjezxv6S931DDqtQqHg2XrN?usp=sharing)
 
 ---
 
 ## 📦 Download the APK
 
-👉 **APK:**  
-https://drive.google.com/file/d/1Dig_7LhAJxd6_uSuGbrXzR8okkNiMoeK/view?usp=sharing
+[![Download APK](https://img.shields.io/badge/⬇️%20Download%20APK-34A853?style=for-the-badge&logo=android&logoColor=white)](https://drive.google.com/file/d/1Dig_7LhAJxd6_uSuGbrXzR8okkNiMoeK/view?usp=sharing)
 
 ---
 

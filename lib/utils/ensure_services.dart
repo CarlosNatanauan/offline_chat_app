@@ -6,7 +6,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:android_intent_plus/android_intent.dart';
 
-/// Call this before doing anything that needs Bluetooth + Location.
 /// Returns true if everything is ON and usable.
 Future<bool> ensureBluetoothAndLocationOn(BuildContext context) async {
   final missing = <String>[];
@@ -41,9 +40,7 @@ Future<bool> ensureBluetoothAndLocationOn(BuildContext context) async {
       final isDark = theme.brightness == Brightness.dark;
 
       return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         backgroundColor: colorScheme.surface,
         child: Padding(
@@ -56,9 +53,7 @@ Future<bool> ensureBluetoothAndLocationOn(BuildContext context) async {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colorScheme.primary.withOpacity(
-                    isDark ? 0.28 : 0.10,
-                  ),
+                  color: colorScheme.primary.withOpacity(isDark ? 0.28 : 0.10),
                 ),
                 child: Icon(
                   Icons.wifi_tethering_rounded,
@@ -107,17 +102,16 @@ Future<bool> ensureBluetoothAndLocationOn(BuildContext context) async {
 
               const SizedBox(height: 12),
 
-Align(
-  alignment: Alignment.centerLeft,
-  child: Text(
-    "Use your phone's quick settings or system settings, "
-    "then come back to this screen.",
-    style: theme.textTheme.bodySmall?.copyWith(
-      color: colorScheme.onSurface.withOpacity(0.7),
-    ),
-  ),
-),
-
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Use your phone's quick settings or system settings, "
+                  "then come back to this screen.",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ),
 
               const SizedBox(height: 20),
 
@@ -188,11 +182,7 @@ class _RequirementRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: colorScheme.primary,
-          ),
+          Icon(icon, size: 20, color: colorScheme.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -222,7 +212,6 @@ class _RequirementRow extends StatelessWidget {
 }
 
 // ---- Service checks ----
-
 Future<bool> _checkLocation() async {
   try {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -250,7 +239,6 @@ Future<bool> _checkLocation() async {
 
 Future<bool> _checkBluetooth() async {
   try {
-    // ✅ FIX: Add timeout and catch errors to prevent system dialog
     final state = await FlutterBluePlus.adapterState.first.timeout(
       const Duration(milliseconds: 500),
       onTimeout: () {
@@ -258,11 +246,10 @@ Future<bool> _checkBluetooth() async {
         return BluetoothAdapterState.unknown;
       },
     );
-    
+
     return state == BluetoothAdapterState.on;
   } catch (e) {
     print("⚠️ Bluetooth check error: $e");
-    // If we can't check, assume it's off to be safe
     return false;
   }
 }
@@ -273,9 +260,7 @@ Future<void> _openBluetoothSettings() async {
   if (!Platform.isAndroid) return;
 
   try {
-    const intent = AndroidIntent(
-      action: 'android.settings.BLUETOOTH_SETTINGS',
-    );
+    const intent = AndroidIntent(action: 'android.settings.BLUETOOTH_SETTINGS');
     await intent.launch();
   } catch (e) {
     print("⚠️ Could not open Bluetooth settings: $e");

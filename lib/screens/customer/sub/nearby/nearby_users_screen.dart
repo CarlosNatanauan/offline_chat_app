@@ -10,11 +10,8 @@ import 'package:offline_chat_app/utils/permission_helper.dart';
 
 class NearbyUsersScreenWiFi extends StatefulWidget {
   final String userName;
-  
-  const NearbyUsersScreenWiFi({
-    super.key,
-    required this.userName,
-  });
+
+  const NearbyUsersScreenWiFi({super.key, required this.userName});
 
   @override
   State<NearbyUsersScreenWiFi> createState() => _NearbyUsersScreenWiFiState();
@@ -26,7 +23,7 @@ class _NearbyUsersScreenWiFiState extends State<NearbyUsersScreenWiFi>
 
   List<CaflowDevice> _devices = [];
   ConnectionStatus _status = ConnectionStatus.idle;
-  
+
   StreamSubscription<List<CaflowDevice>>? _devicesSub;
   StreamSubscription<ConnectionStatus>? _statusSub;
 
@@ -47,7 +44,7 @@ class _NearbyUsersScreenWiFiState extends State<NearbyUsersScreenWiFi>
     // Request permissions first
     final permissionsGranted =
         await PermissionHelper.requestWiFiDirectPermissions();
-    
+
     if (!permissionsGranted) {
       if (mounted) {
         _showPermissionDialog();
@@ -57,7 +54,7 @@ class _NearbyUsersScreenWiFiState extends State<NearbyUsersScreenWiFi>
 
     // Initialize WiFi Direct
     final initialized = await _wifiService.initialize(widget.userName);
-    
+
     if (!initialized) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,7 +68,6 @@ class _NearbyUsersScreenWiFiState extends State<NearbyUsersScreenWiFi>
     }
 
     // ====== CONTROL CALLBACKS ======
-
     // Incoming chat request from other device
     _wifiService.onChatRequestReceived = (remoteName) async {
       if (!mounted) return;
@@ -119,28 +115,23 @@ class _NearbyUsersScreenWiFiState extends State<NearbyUsersScreenWiFi>
         await _wifiService.stopDiscovery();
 
         // We only need a CaflowDevice object for UI; address isn't used in ChatScreenWiFi
-        final remoteDevice = CaflowDevice(
-          name: remoteName,
-          address: 'remote', // dummy
-        );
+        final remoteDevice = CaflowDevice(name: remoteName, address: 'remote');
 
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ChatScreenWiFi(
-              device: remoteDevice,
-              userName: widget.userName,
-            ),
+            builder: (_) =>
+                ChatScreenWiFi(device: remoteDevice, userName: widget.userName),
           ),
         );
 
         // After chat, restart discovery & advertising
         await _startDiscoveryAndAdvertising();
-} else {
-  await _wifiService.sendChatDecline(widget.userName);
-  // Instead of full disconnect, just drop the peer:
-  await _wifiService.disconnectPeerOnly();
-}
+      } else {
+        await _wifiService.sendChatDecline(widget.userName);
+        // Instead of full disconnect, just drop the peer:
+        await _wifiService.disconnectPeerOnly();
+      }
     };
 
     // Our outgoing request was accepted
@@ -164,44 +155,37 @@ class _NearbyUsersScreenWiFiState extends State<NearbyUsersScreenWiFi>
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ChatScreenWiFi(
-            device: device,
-            userName: widget.userName,
-          ),
+          builder: (_) =>
+              ChatScreenWiFi(device: device, userName: widget.userName),
         ),
       );
 
       await _startDiscoveryAndAdvertising();
     };
 
-// Our outgoing request was declined
-_wifiService.onChatDeclined = (remoteName) async {
-  if (!mounted) return;
-  if (!_isWaitingForChatResponse) return;
+    // Our outgoing request was declined
+    _wifiService.onChatDeclined = (remoteName) async {
+      if (!mounted) return;
+      if (!_isWaitingForChatResponse) return;
 
-  _isWaitingForChatResponse = false;
-  _pendingChatDevice = null;
+      _isWaitingForChatResponse = false;
+      _pendingChatDevice = null;
 
-  if (_waitingDialogOpen && Navigator.of(context).canPop()) {
-    Navigator.of(context).pop(); // close "Waiting..." dialog
-    _waitingDialogOpen = false;
-  }
+      if (_waitingDialogOpen && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(); // close "Waiting..." dialog
+        _waitingDialogOpen = false;
+      }
 
-  // Just drop the peer connection, keep advertising/discovery running
-  await _wifiService.disconnectPeerOnly();
+      // Just drop the peer connection, keep advertising/discovery running
+      await _wifiService.disconnectPeerOnly();
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('$remoteName declined your chat request'),
-      backgroundColor: Colors.orange,
-    ),
-  );
-
-  // No need to call _startDiscoveryAndAdvertising() here,
-  // because we never stopped it.
-};
-
-
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$remoteName declined your chat request'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    };
 
     // ====== NORMAL DISCOVERY / STATUS STREAMS ======
 
@@ -223,7 +207,8 @@ _wifiService.onChatDeclined = (remoteName) async {
 
       // If we were waiting for the other user and the connection drops,
       // treat it as a failed request.
-      if (status == ConnectionStatus.disconnected && _isWaitingForChatResponse) {
+      if (status == ConnectionStatus.disconnected &&
+          _isWaitingForChatResponse) {
         _isWaitingForChatResponse = false;
         _pendingChatDevice = null;
 
@@ -235,9 +220,7 @@ _wifiService.onChatDeclined = (remoteName) async {
         // Optional: show a small message so user understands
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Connection lost before the other device responded.',
-            ),
+            content: Text('Connection lost before the other device responded.'),
           ),
         );
       }
@@ -258,14 +241,33 @@ _wifiService.onChatDeclined = (remoteName) async {
   }
 
   void _showPermissionDialog() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Permissions Required'),
-        content: const Text(
-          'Caflow needs Location permission to discover nearby users via Wi-Fi Direct.\n\n'
-          'Please grant the permission in your device settings.',
+        title: Row(
+          children: [
+            Icon(Icons.lock_open_rounded, color: cs.primary),
+            const SizedBox(width: 8),
+            const Text('Permissions needed'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Caflow needs Location (and nearby access) so your phone can spot other phones in this café.',
+            ),
+            SizedBox(height: 12),
+            Text(
+              'It doesn’t use this to go online — only to discover people sitting around you.',
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -273,14 +275,14 @@ _wifiService.onChatDeclined = (remoteName) async {
               Navigator.pop(ctx);
               Navigator.pop(context);
             },
-            child: const Text('Cancel'),
+            child: const Text('Leave room'),
           ),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await _initialize();
             },
-            child: const Text('Retry'),
+            child: const Text('Try again'),
           ),
         ],
       ),
@@ -288,68 +290,73 @@ _wifiService.onChatDeclined = (remoteName) async {
   }
 
   void _openSystemSettingsSheet() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text('Check device settings'),
-                subtitle: Text(
-                  'If you are having trouble discovering devices, '
-                  'check that Wi-Fi, Bluetooth, and Location are turned ON.',
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.tips_and_updates_rounded,
+                    color: cs.primary,
+                  ),
+                  title: const Text('Having trouble seeing people nearby?'),
+                  subtitle: const Text(
+                    'Check that Wi-Fi, Bluetooth, and Location are all turned ON.',
+                  ),
                 ),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.wifi),
-                title: const Text('Open Wi-Fi settings'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSettings.openAppSettings(
-                    type: AppSettingsType.wifi,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.bluetooth),
-                title: const Text('Open Bluetooth settings'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSettings.openAppSettings(
-                    type: AppSettingsType.bluetooth,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.location_on),
-                title: const Text('Open Location settings'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSettings.openAppSettings(
-                    type: AppSettingsType.location,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.android),
-                title: const Text('Open app settings'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppSettings.openAppSettings(
-                    type: AppSettingsType.settings,
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.wifi),
+                  title: const Text('Open Wi-Fi settings'),
+                  subtitle: const Text('Turn Wi-Fi on (internet not required)'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    AppSettings.openAppSettings(type: AppSettingsType.wifi);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.bluetooth),
+                  title: const Text('Open Bluetooth settings'),
+                  subtitle: const Text('Make sure Bluetooth is enabled'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    AppSettings.openAppSettings(
+                      type: AppSettingsType.bluetooth,
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.location_on),
+                  title: const Text('Open Location settings'),
+                  subtitle: const Text('Location must be ON for discovery'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    AppSettings.openAppSettings(type: AppSettingsType.location);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.android),
+                  title: const Text('Open Caflow app settings'),
+                  subtitle: const Text('Check permissions for this app'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    AppSettings.openAppSettings(type: AppSettingsType.settings);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -392,8 +399,7 @@ _wifiService.onChatDeclined = (remoteName) async {
     );
 
     // Attempt connection
-    final success =
-        await _wifiService.connectToDevice(device, widget.userName);
+    final success = await _wifiService.connectToDevice(device, widget.userName);
 
     if (mounted) {
       Navigator.pop(context); // Close connecting dialog
@@ -407,16 +413,16 @@ _wifiService.onChatDeclined = (remoteName) async {
       await _wifiService.sendChatRequest(widget.userName);
 
       _waitingDialogOpen = true;
-      // Show "waiting for acceptance" dialog
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
-            title: const Text('Waiting for response'),
+            title: const Text('Waiting on the other side'),
             content: Text(
-              'Waiting for ${device.name} to accept your chat request...',
+              '${device.name} is deciding whether to join this chat…',
+              style: const TextStyle(height: 1.4),
             ),
             actions: [
               TextButton(
@@ -427,7 +433,7 @@ _wifiService.onChatDeclined = (remoteName) async {
                   _pendingChatDevice = null;
                   await _wifiService.sendChatDecline(widget.userName);
                 },
-                child: const Text('Cancel'),
+                child: const Text('Cancel request'),
               ),
             ],
           ),
@@ -439,14 +445,17 @@ _wifiService.onChatDeclined = (remoteName) async {
   }
 
   void _showConnectionFailedDialog(CaflowDevice device) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Connection Failed'),
+            Icon(Icons.sync_problem_rounded, color: cs.error),
+            const SizedBox(width: 8),
+            const Text('Couldn\'t connect'),
           ],
         ),
         content: SingleChildScrollView(
@@ -454,36 +463,53 @@ _wifiService.onChatDeclined = (remoteName) async {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Could not connect to ${device.name}.'),
+              Text('We couldn\'t connect to ${device.name}.'),
               const SizedBox(height: 16),
-              const Text(
-                'Tips:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                'Things you can quickly check on your side:',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text('1️⃣ Make sure Wi-Fi is enabled on both devices'),
+              const Text('• Wi-Fi is ON on this phone (internet not required)'),
               const SizedBox(height: 4),
-              const Text('2️⃣ Both devices should have Location enabled'),
+              const Text('• Location is enabled for this device'),
               const SizedBox(height: 4),
-              const Text('3️⃣ Ensure both devices are on this screen'),
+              const Text('• You are on the Caflow “Nearby room” screen'),
+              const SizedBox(height: 12),
+              Text(
+                'And what you can ask the other person to do:',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('• Open Caflow and stay on the nearby screen'),
               const SizedBox(height: 4),
-              const Text('4️⃣ Grant all permissions when asked'),
+              const Text('• Keep Wi-Fi, Bluetooth and Location turned ON'),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue),
+                  color: cs.primary.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: cs.primary.withOpacity(0.5)),
                 ),
-                child: const Row(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline, size: 20, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Expanded(
+                    Icon(
+                      Icons.wifi_tethering_off_rounded,
+                      size: 20,
+                      color: cs.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
                       child: Text(
-                        'Caflow works completely offline using nearby connections.',
-                        style: TextStyle(fontSize: 12),
+                        'Caflow uses nearby connections only — '
+                        'no café Wi-Fi or mobile data is needed.',
+                        style: TextStyle(fontSize: 12, height: 1.4),
                       ),
                     ),
                   ],
@@ -502,7 +528,7 @@ _wifiService.onChatDeclined = (remoteName) async {
               Navigator.pop(ctx);
               _connectAndChat(device);
             },
-            child: const Text('Try Again'),
+            child: const Text('Try again'),
           ),
         ],
       ),
@@ -539,15 +565,33 @@ _wifiService.onChatDeclined = (remoteName) async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Nearby Caflow Users"),
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Nearby Caflow room",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Signed in as ${widget.userName}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _startDiscoveryAndAdvertising,
-            tooltip: 'Refresh',
+            tooltip: 'Refresh nearby list',
           ),
         ],
       ),
+
       body: Column(
         children: [
           // Top banner: shows state + "Troubleshoot" for error/permission cases

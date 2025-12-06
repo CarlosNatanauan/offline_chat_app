@@ -35,15 +35,10 @@ class _MessageBubbleState extends State<MessageBubble>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    // FIXED: Animation direction changes based on message alignment
-    // Received messages swipe right (+0.15), sent messages swipe left (-0.15)
     _swipeAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: Offset(widget.message.isSent ? -0.15 : 0.15, 0),
-    ).animate(CurvedAnimation(
-      parent: _swipeController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeOut));
   }
 
   @override
@@ -64,12 +59,18 @@ class _MessageBubbleState extends State<MessageBubble>
         // Sent messages: swipe left (negative delta)
         if (!isSent && details.delta.dx > 0) {
           setState(() {
-            _swipeProgress = (_swipeProgress + details.delta.dx / 100).clamp(0.0, 1.0);
+            _swipeProgress = (_swipeProgress + details.delta.dx / 100).clamp(
+              0.0,
+              1.0,
+            );
           });
           _swipeController.value = _swipeProgress;
         } else if (isSent && details.delta.dx < 0) {
           setState(() {
-            _swipeProgress = (_swipeProgress - details.delta.dx / 100).clamp(0.0, 1.0);
+            _swipeProgress = (_swipeProgress - details.delta.dx / 100).clamp(
+              0.0,
+              1.0,
+            );
           });
           _swipeController.value = _swipeProgress;
         }
@@ -127,13 +128,18 @@ class _MessageBubbleState extends State<MessageBubble>
                   maxWidth: MediaQuery.of(context).size.width * 0.75,
                 ),
                 child: Column(
-                  crossAxisAlignment:
-                      isSent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: isSent
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     // Reply preview (if this message is a reply)
                     if (widget.message.replyToMessage != null)
                       _buildReplyPreview(
-                          context, widget.message.replyToMessage!, cs, isSent),
+                        context,
+                        widget.message.replyToMessage!,
+                        cs,
+                        isSent,
+                      ),
 
                     // Main message bubble
                     Container(
@@ -179,8 +185,9 @@ class _MessageBubbleState extends State<MessageBubble>
                             widget.message.text,
                             style: TextStyle(
                               fontSize: 15,
-                              color:
-                                  isSent ? cs.onPrimary : cs.onSurfaceVariant,
+                              color: isSent
+                                  ? cs.onPrimary
+                                  : cs.onSurfaceVariant,
                               height: 1.4,
                             ),
                           ),
@@ -209,7 +216,10 @@ class _MessageBubbleState extends State<MessageBubble>
                     // Reactions bar - positioned overlapping the message bubble
                     if (widget.message.reactions.isNotEmpty)
                       Transform.translate(
-                        offset: const Offset(0, -8), // Move up to overlap with bubble
+                        offset: const Offset(
+                          0,
+                          -8,
+                        ), // Move up to overlap with bubble
                         child: _buildReactionsBar(context, cs),
                       ),
                   ],
@@ -229,7 +239,7 @@ class _MessageBubbleState extends State<MessageBubble>
 
     return Container(
       margin: EdgeInsets.only(
-        top: 0, // No top margin since we're using Transform.translate
+        top: 0,
         left: isSent ? 0 : 8,
         right: isSent ? 8 : 0,
       ),
@@ -237,10 +247,7 @@ class _MessageBubbleState extends State<MessageBubble>
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: cs.outline.withOpacity(0.3),
-          width: 1.5,
-        ),
+        border: Border.all(color: cs.outline.withOpacity(0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -264,7 +271,7 @@ class _MessageBubbleState extends State<MessageBubble>
                 widget.currentUserId,
                 entry.key,
               );
-              
+
               if (hasReacted) {
                 // User already reacted, so this is an "undo" - we need to handle removal
                 // We'll still call onReaction, but the parent needs to handle removal
@@ -286,10 +293,7 @@ class _MessageBubbleState extends State<MessageBubble>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    entry.key,
-                    style: const TextStyle(fontSize: 15),
-                  ),
+                  Text(entry.key, style: const TextStyle(fontSize: 15)),
                   if (entry.value > 1) ...[
                     const SizedBox(width: 3),
                     Text(
@@ -325,8 +329,9 @@ class _MessageBubbleState extends State<MessageBubble>
             : cs.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color:
-              isSent ? cs.primary.withOpacity(0.5) : cs.outline.withOpacity(0.3),
+          color: isSent
+              ? cs.primary.withOpacity(0.5)
+              : cs.outline.withOpacity(0.3),
           width: 1,
         ),
       ),

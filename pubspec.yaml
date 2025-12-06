@@ -39,13 +39,14 @@ dependencies:
   mobile_scanner: ^7.1.3
   qr_flutter: ^4.1.0
   shared_preferences: ^2.5.3
-  flutter_ble_peripheral: ^2.0.1
-  bluetooth_classic: ^0.0.4
+  #flutter_ble_peripheral: ^2.0.1
+  #bluetooth_classic: ^0.0.4
   geolocator: ^14.0.2
   android_intent_plus: ^6.0.0
   app_settings: ^6.1.1
-  flutter_bluetooth_serial: ^0.4.0
+  #flutter_bluetooth_serial: ^0.4.0
   nearby_connections: ^4.3.0
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -63,11 +64,16 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/caflow_chat_app_logo.png"
+  min_sdk_android: 21
+
 
   # To add assets to your application, add an assets section, like this:
   assets:

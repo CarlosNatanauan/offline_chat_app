@@ -1,5 +1,6 @@
 // screens/customer/customer_home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:offline_chat_app/screens/customer/main/widgets/display_name_dialog.dart';
 import 'package:offline_chat_app/screens/customer/sub/nearby/nearby_users_screen.dart';
 import 'package:offline_chat_app/utils/ensure_services.dart';
 
@@ -13,7 +14,28 @@ class CustomerHomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat in this café'),
+        elevation: 0,
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Caflow in this café',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Offline chat with people around you',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurface.withOpacity(0.7),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -21,21 +43,53 @@ class CustomerHomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header / hero
-              Text(
-                'Chat with people nearby',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Caflow links phones directly, like walkie-talkies.\n'
-                'No mobile data, no café Wi-Fi needed for messages.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onBackground.withOpacity(0.7),
-                  height: 1.4,
-                ),
+              // Hero
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          cs.primaryContainer.withOpacity(0.9),
+                          cs.primaryContainer.withOpacity(0.5),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 32,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Chat with people nearby',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Caflow links phones directly, like walkie-talkies.\n'
+                          'No mobile data. No café Wi-Fi login. Just nearby chat.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onBackground.withOpacity(0.7),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 24),
@@ -54,7 +108,7 @@ class CustomerHomeScreen extends StatelessWidget {
                 children: [
                   _RequirementChip(
                     icon: Icons.wifi,
-                    label: 'Wi-Fi ON (chip only)',
+                    label: 'Wi-Fi switch ON',
                     color: cs.primary,
                   ),
                   _RequirementChip(
@@ -69,7 +123,7 @@ class CustomerHomeScreen extends StatelessWidget {
                   ),
                   _RequirementChip(
                     icon: Icons.cloud_off,
-                    label: 'No internet needed',
+                    label: 'Works without internet',
                     color: cs.secondary,
                   ),
                 ],
@@ -77,8 +131,9 @@ class CustomerHomeScreen extends StatelessWidget {
 
               const SizedBox(height: 8),
               Text(
-                'Android asks for Wi-Fi, Bluetooth and Location so it can find nearby phones. '
-                'Caflow does not use these to go online — only to discover people around you.',
+                'Android uses Wi-Fi, Bluetooth, and Location to let your phone spot '
+                'other phones close by. Caflow only uses them for discovery — '
+                'not to send anything online.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: cs.onBackground.withOpacity(0.6),
                   height: 1.4,
@@ -90,14 +145,14 @@ class CustomerHomeScreen extends StatelessWidget {
               // How it works card
               Card(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 elevation: 0,
                 color: cs.surface,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 16,
+                    vertical: 18,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,40 +165,57 @@ class CustomerHomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'How Caflow works',
+                            'How Caflow works in a café',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       _StepRow(
                         number: '1',
                         text:
-                            'Everyone in the café opens Caflow and taps “Enter nearby room”.',
+                            'People in this café open Caflow and tap “Enter nearby room”.',
                       ),
                       const SizedBox(height: 6),
                       _StepRow(
                         number: '2',
                         text:
-                            'Caflow uses your phone’s Wi-Fi / Bluetooth to spot other phones nearby '
-                            '(a direct device-to-device link, called Wi-Fi Direct).',
+                            'Your phone uses Wi-Fi Direct and Bluetooth to discover phones sitting nearby — a direct device-to-device link.',
                       ),
                       const SizedBox(height: 6),
                       _StepRow(
                         number: '3',
                         text:
-                            'You pick someone from the nearby list and start chatting. '
-                            'Messages travel only between the phones in this café.',
+                            'You pick a name from the list and start chatting. Messages move only between the phones in this room.',
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Messages never go through the internet or a cloud server — '
-                        'they only hop directly between nearby phones.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurface.withOpacity(0.7),
-                          height: 1.4,
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: cs.primaryContainer.withOpacity(0.28),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.cloud_off_rounded,
+                              size: 18,
+                              color: cs.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Messages don’t go through café Wi-Fi, mobile data, or any cloud server — '
+                                'they stay between nearby phones.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -160,8 +232,8 @@ class CustomerHomeScreen extends StatelessWidget {
                   final ok = await ensureBluetoothAndLocationOn(context);
                   if (!ok) return;
 
-                  // 👇 Ask the user for a display name instead of Guest###
-                  final displayName = await _askForDisplayName(context);
+                  // Ask the user for a display name instead of Guest###
+                  final displayName = await showDisplayNameDialog(context);
                   if (displayName == null || displayName.trim().isEmpty) {
                     return; // user cancelled or left it empty
                   }
@@ -177,12 +249,12 @@ class CustomerHomeScreen extends StatelessWidget {
                     );
                   }
                 },
-                icon: const Icon(Icons.wifi_tethering),
+                icon: const Icon(Icons.wifi_tethering_rounded),
                 label: const Text('Enter nearby room'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   textStyle: const TextStyle(
                     fontSize: 16,
@@ -214,54 +286,6 @@ class CustomerHomeScreen extends StatelessWidget {
   }
 }
 
-/// Dialog helper – ask for a display name
-Future<String?> _askForDisplayName(BuildContext context) async {
-  final controller = TextEditingController();
-  return showDialog<String>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) {
-      return AlertDialog(
-        title: const Text('Pick a name'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'This is the name people in this café will see.\n'
-              'You can use a nickname or something simple like “Table 4, window”.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              maxLength: 20,
-              decoration: const InputDecoration(
-                labelText: 'Your display name',
-                hintText: 'e.g. Aya, Table 4, Blue hoodie',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (controller.text.trim().isEmpty) return;
-              Navigator.pop(ctx, controller.text.trim());
-            },
-            child: const Text('Continue'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
 class _RequirementChip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -288,8 +312,8 @@ class _RequirementChip extends StatelessWidget {
           fontSize: 12,
         ),
       ),
-      backgroundColor: color.withOpacity(0.9),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      backgroundColor: color.withOpacity(0.95),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
     );
   }
 }
@@ -315,7 +339,7 @@ class _StepRow extends StatelessWidget {
           height: 22,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: cs.primary.withOpacity(0.1),
+            color: cs.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(

@@ -18,7 +18,6 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _orbitController = AnimationController(
       vsync: this,
-      // Faster rotation
       duration: const Duration(seconds: 6),
     )..repeat();
   }
@@ -40,10 +39,7 @@ class _HomeScreenState extends State<HomeScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              cs.surfaceVariant.withOpacity(0.25),
-              cs.background,
-            ],
+            colors: [cs.surfaceVariant.withOpacity(0.25), cs.background],
           ),
         ),
         child: SafeArea(
@@ -54,11 +50,28 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 const SizedBox(height: 16),
 
-                /// Brand area (top) – small pill + Caflow + accent line
+                /// Brand area (top)
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'conversations that smell like coffee',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'CAFLOW',
@@ -81,11 +94,9 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
 
                 const SizedBox(height: 28),
-
-                /// Short title + hint (no full explanation here)
                 Center(
                   child: Text(
-                    'A conversation made for this café.',
+                    'A tiny chat room for this café.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
@@ -96,7 +107,8 @@ class _HomeScreenState extends State<HomeScreen>
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    'Open Caflow on both phones and connect directly—no internet,\n no cloud, just the people nearby.',
+                    'Say hi to the next table, share recommendations,\n'
+                    'or quietly live-tweet the latte art — all from your seat.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: cs.onBackground.withOpacity(0.7),
@@ -130,77 +142,81 @@ class _HomeScreenState extends State<HomeScreen>
                       child: Padding(
                         padding: const EdgeInsets.all(32),
                         child: Stack(
-  alignment: Alignment.center,
-  children: [
-    // Main logo
-    Image.asset(
-      'assets/images/offine_chat_app_logo_no_bg.png',
-      fit: BoxFit.contain,
-    ),
+                          alignment: Alignment.center,
+                          children: [
+                            // Main logo
+                            Image.asset(
+                              'assets/images/offine_chat_app_logo_no_bg.png',
+                              fit: BoxFit.contain,
+                            ),
 
-    // Dot 1 – rotates CLOCKWISE
-    AnimatedBuilder(
-      animation: _orbitController,
-      builder: (context, child) {
-        const radius = 90.0;
-        final angle = _orbitController.value * 2 * math.pi;
-        return Transform.translate(
-          offset: Offset(
-            radius * math.cos(angle),
-            radius * math.sin(angle),
-          ),
-          child: child,
-        );
-      },
-      child: Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(
-          color: cs.primary,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: cs.primary.withOpacity(0.45),
-              blurRadius: 12,
-            ),
-          ],
-        ),
-      ),
-    ),
+                            // Dot 1 – rotates CLOCKWISE
+                            AnimatedBuilder(
+                              animation: _orbitController,
+                              builder: (context, child) {
+                                const radius = 90.0;
+                                final angle =
+                                    _orbitController.value * 2 * math.pi;
+                                return Transform.translate(
+                                  offset: Offset(
+                                    radius * math.cos(angle),
+                                    radius * math.sin(angle),
+                                  ),
+                                  child: child,
+                                );
+                              },
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: cs.primary,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: cs.primary.withOpacity(0.45),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
 
-    // Dot 2 – rotates COUNTER-CLOCKWISE
-    AnimatedBuilder(
-      animation: _orbitController,
-      builder: (context, child) {
-        const radius = 90.0;
-        // Reverse rotation by subtracting the angle
-        final angle = -_orbitController.value * 2 * math.pi;
-        return Transform.translate(
-          offset: Offset(
-            radius * math.cos(angle),
-            radius * math.sin(angle),
-          ),
-          child: child,
-        );
-      },
-      child: Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(
-          color: cs.secondary,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: cs.secondary.withOpacity(0.35),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-      ),
-    ),
-  ],
-)
-
+                            // Dot 2 – rotates COUNTER-CLOCKWISE
+                            AnimatedBuilder(
+                              animation: _orbitController,
+                              builder: (context, child) {
+                                const radius = 90.0;
+                                final angle =
+                                    -_orbitController.value * 2 * math.pi;
+                                return Transform.translate(
+                                  offset: Offset(
+                                    radius * math.cos(angle),
+                                    radius * math.sin(angle),
+                                  ),
+                                  child: child,
+                                );
+                              },
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF67987A,
+                                  ), 
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF67987A,
+                                      ).withOpacity(0.35),
+                                      blurRadius: 10,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -208,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                 const SizedBox(height: 24),
 
-                /// Single CTA (kept simple)
+                /// Single CTA
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(
@@ -226,11 +242,8 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                   child: const Text(
-                    'Start in this café',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    'Step into the café room',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
 

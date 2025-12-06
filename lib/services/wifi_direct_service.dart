@@ -36,7 +36,7 @@ class WiFiDirectService {
   bool _isDiscovering = false;
   bool _isAdvertising = false;
   
-  // 🔹 NEW: Track if we're actually ready to send messages
+  //Track if we're actually ready to send messages
   bool _connectionStable = false;
 
   // Strategy and service ID
@@ -181,7 +181,7 @@ class WiFiDirectService {
         onConnectionInitiated: (endpointId, info) {
           print("🔗 Connection initiated with: ${info.endpointName}");
           
-          // 🔹 IMPORTANT: Stop discovery when someone connects to us
+          // Stop discovery when someone connects to us
           if (_isDiscovering) {
             stopDiscovery();
           }
@@ -201,7 +201,7 @@ class WiFiDirectService {
             print("✅ Connected to: $endpointId");
             _connectedEndpointId = endpointId;
             
-            // 🔹 NEW: Wait a bit for connection to stabilize
+            // Wait a bit for connection to stabilize
             Future.delayed(const Duration(milliseconds: 500), () {
               _connectionStable = true;
               _updateStatus(ConnectionStatus.connected);
@@ -292,7 +292,7 @@ class WiFiDirectService {
             print("✅ Connected successfully!");
             _connectedEndpointId = endpointId;
             
-            // 🔹 NEW: Wait for connection to stabilize before saying we're ready
+            // Wait for connection to stabilize before saying we're ready
             Future.delayed(const Duration(milliseconds: 500), () {
               _connectionStable = true;
               _updateStatus(ConnectionStatus.connected);
@@ -375,7 +375,7 @@ class WiFiDirectService {
       return false;
     }
 
-    // 🔹 NEW: Wait for connection to be stable before sending
+    // Wait for connection to be stable before sending
     if (!_connectionStable) {
       print("⚠️ Connection not stable yet, waiting...");
       await Future.delayed(const Duration(milliseconds: 500));

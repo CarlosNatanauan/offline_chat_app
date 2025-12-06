@@ -60,7 +60,7 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
         _handleReactionUpdate(rawMessage);
         return;
       }
-      
+
       // Check if it's a reaction removal
       if (rawMessage.startsWith('__REACTION_REMOVE__:')) {
         _handleReactionRemoval(rawMessage);
@@ -75,9 +75,7 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
         replyToMessage = _messageMap[message.replyToId];
       }
 
-      final messageWithReply = message.copyWith(
-        replyToMessage: replyToMessage,
-      );
+      final messageWithReply = message.copyWith(replyToMessage: replyToMessage);
 
       setState(() {
         _messages.add(messageWithReply);
@@ -110,7 +108,7 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
     setState(() {
       final updatedMessage = message.addReaction(reaction);
       _messageMap[messageId] = updatedMessage;
-      
+
       final index = _messages.indexWhere((m) => m.id == messageId);
       if (index != -1) {
         _messages[index] = updatedMessage;
@@ -133,7 +131,7 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
     setState(() {
       final updatedMessage = message.removeReaction(userId, emoji);
       _messageMap[messageId] = updatedMessage;
-      
+
       final index = _messages.indexWhere((m) => m.id == messageId);
       if (index != -1) {
         _messages[index] = updatedMessage;
@@ -145,17 +143,28 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
     _statusSub = _wifiService.statusStream.listen((status) async {
       if (!mounted) return;
 
+      // derive an "effective" status for the UI
+      ConnectionStatus effectiveStatus = status;
+
+      // If the underlying service still reports a live connection,
+      // keep the chat UI in "connected" state for any non-fatal status.
+      if (_wifiService.isConnected &&
+          status != ConnectionStatus.disconnected &&
+          status != ConnectionStatus.error &&
+          status != ConnectionStatus.permissionDenied) {
+        effectiveStatus = ConnectionStatus.connected;
+      }
+
+      print('[ChatScreenWiFi] status = $status, effective = $effectiveStatus');
+
       setState(() {
-        _status = status;
+        _status = effectiveStatus;
       });
 
-      final bool isTerminalState = status == ConnectionStatus.disconnected ||
-          status == ConnectionStatus.error ||
-          status == ConnectionStatus.permissionDenied ||
-          status == ConnectionStatus.idle ||
-          status == ConnectionStatus.ready ||
-          status == ConnectionStatus.discovering ||
-          status == ConnectionStatus.advertising;
+      final bool isTerminalState =
+          effectiveStatus == ConnectionStatus.disconnected ||
+          effectiveStatus == ConnectionStatus.error ||
+          effectiveStatus == ConnectionStatus.permissionDenied;
 
       if (!isTerminalState) return;
 
@@ -173,7 +182,7 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
 
       if (!_disconnectDialogOpen && !_hasClosed) {
         _disconnectDialogOpen = true;
-        await _showDisconnectedDialog(status);
+        await _showDisconnectedDialog(effectiveStatus);
         _disconnectDialogOpen = false;
       }
     });
@@ -182,24 +191,30 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
   Future<void> _showDisconnectedDialog(ConnectionStatus cause) async {
     if (!mounted) return;
 
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.link_off_rounded, color: Colors.orange),
-            SizedBox(width: 12),
-            Text('Connection Lost'),
+            Icon(Icons.link_off_rounded, color: cs.error),
+            const SizedBox(width: 12),
+            const Text('Connection ended'),
           ],
         ),
-        content: const Text(
-          'The connection was lost. This can happen if one of you left the chat, '
-          'or if Wi-Fi, Bluetooth, or Location services were turned off on either device.\n\n'
-          'You will be returned to the nearby users screen.',
+        content: Text(
+          'The nearby link to ${widget.device.name} was interrupted.\n\n'
+          'This usually happens if one of you closed the chat, moved too far '
+          'away, or turned off Wi-Fi / Bluetooth / Location.\n\n'
+          'You’ll be taken back to the nearby room so you can reconnect or '
+          'start a chat with someone else.',
+          style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
         ),
         actions: [
-          FilledButton(
+          FilledButton.icon(
             onPressed: () async {
               Navigator.pop(ctx);
               if (mounted && !_hasClosed && Navigator.of(context).canPop()) {
@@ -207,7 +222,8 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('OK'),
+            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+            label: const Text('Back to nearby room'),
           ),
         ],
       ),
@@ -242,16 +258,22 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
       _scrollToBottom();
     } else {
       if (mounted) {
+        final cs = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
               children: [
                 Icon(Icons.error_outline, color: Colors.white, size: 20),
                 SizedBox(width: 8),
-                Text('Failed to send message'),
+                Expanded(
+                  child: Text(
+                    'Message wasn\'t sent. The connection may have dropped.',
+                    maxLines: 2,
+                  ),
+                ),
               ],
             ),
-            backgroundColor: Colors.red.shade700,
+            backgroundColor: cs.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -262,13 +284,13 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
   Future<void> _sendReaction(ChatMessage message, String emoji) async {
     // Check if user already reacted with this emoji
     final hasReacted = message.hasUserReacted(widget.userName, emoji);
-    
+
     if (hasReacted) {
       // Remove the reaction
       setState(() {
         final updatedMessage = message.removeReaction(widget.userName, emoji);
         _messageMap[message.id] = updatedMessage;
-        
+
         final index = _messages.indexWhere((m) => m.id == message.id);
         if (index != -1) {
           _messages[index] = updatedMessage;
@@ -276,7 +298,8 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
       });
 
       // Send removal to remote
-      final reactionMsg = '__REACTION_REMOVE__:${message.id}:$emoji:${widget.userName}:${DateTime.now().toIso8601String()}';
+      final reactionMsg =
+          '__REACTION_REMOVE__:${message.id}:$emoji:${widget.userName}:${DateTime.now().toIso8601String()}';
       await _wifiService.sendMessage(reactionMsg);
     } else {
       // Add the reaction
@@ -289,7 +312,7 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
       setState(() {
         final updatedMessage = message.addReaction(reaction);
         _messageMap[message.id] = updatedMessage;
-        
+
         final index = _messages.indexWhere((m) => m.id == message.id);
         if (index != -1) {
           _messages[index] = updatedMessage;
@@ -297,7 +320,8 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
       });
 
       // Send addition to remote
-      final reactionMsg = '__REACTION__:${message.id}:$emoji:${widget.userName}:${reaction.timestamp.toIso8601String()}';
+      final reactionMsg =
+          '__REACTION__:${message.id}:$emoji:${widget.userName}:${reaction.timestamp.toIso8601String()}';
       await _wifiService.sendMessage(reactionMsg);
     }
   }
@@ -326,7 +350,11 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
     });
   }
 
-  void _showMessageOptions(ChatMessage message, BuildContext context, Offset tapPosition) {
+  void _showMessageOptions(
+    ChatMessage message,
+    BuildContext context,
+    Offset tapPosition,
+  ) {
     EmojiReactionPicker.showQuickReactions(
       context,
       tapPosition,
@@ -342,18 +370,10 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
           width: 60,
           child: Text(
             '$label:',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 13),
-          ),
-        ),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
       ],
     );
   }
@@ -361,24 +381,35 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
   Future<void> _handleBackPressed() async {
     if (_hasClosed) return;
 
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Leave Chat?'),
+        title: Row(
+          children: [
+            Icon(Icons.logout_rounded, color: cs.primary),
+            const SizedBox(width: 8),
+            const Text('Leave this chat?'),
+          ],
+        ),
         content: const Text(
-          'Leaving the chat will disconnect from the other device.',
+          'Leaving will disconnect from the other phone.\n\n'
+          'You\'ll still see this conversation on your device, but you '
+          'won\'t get any new messages from them.',
+          style: TextStyle(height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Text('Stay in chat'),
           ),
-          FilledButton(
+          FilledButton.icon(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Leave'),
+            icon: Icon(Icons.call_end_rounded, size: 18),
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
+            label: const Text('Disconnect'),
           ),
         ],
       ),
@@ -479,8 +510,10 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
                             message: message,
                             currentUserId: widget.userName,
                             onReply: () => _handleReplyToMessage(message),
-                            onReaction: (emoji) => _sendReaction(message, emoji),
-                            onLongPress: (position) => _showMessageOptions(message, context, position),
+                            onReaction: (emoji) =>
+                                _sendReaction(message, emoji),
+                            onLongPress: (position) =>
+                                _showMessageOptions(message, context, position),
                           );
                         },
                       ),
@@ -488,7 +521,8 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
               ChatInputBar(
                 controller: _messageController,
                 onSend: _sendMessage,
-                enabled: _status == ConnectionStatus.connected,
+                enabled: _wifiService.isConnected,
+
                 replyingTo: _replyingTo,
                 onCancelReply: _cancelReply,
               ),
@@ -501,85 +535,156 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
 
   Widget _buildEmptyState(ColorScheme cs, ThemeData theme) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer.withOpacity(0.3),
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Hero bubble
+            Container(
+              padding: const EdgeInsets.all(26),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    cs.primaryContainer.withOpacity(0.6),
+                    cs.primaryContainer.withOpacity(0.2),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: cs.primary.withOpacity(0.15),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Icon(Icons.forum_outlined, size: 64, color: cs.primary),
             ),
-            child: Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 64,
-              color: cs.primary,
+
+            const SizedBox(height: 24),
+
+            // Title
+            Text(
+              'This chat is still quiet',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: cs.onBackground,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Start Chatting Offline',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: cs.onBackground,
+
+            const SizedBox(height: 8),
+
+            // Subtitle
+            Text(
+              'You\'re connected to ${widget.device.name}.\n'
+              'Drop the first line and see where the conversation goes.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onBackground.withOpacity(0.7),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Send your first message to ${widget.device.name}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cs.onBackground.withOpacity(0.6),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.blue.withOpacity(0.3),
-                width: 1.5,
+
+            const SizedBox(height: 24),
+
+            // Info pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              decoration: BoxDecoration(
+                color: cs.secondaryContainer.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: cs.secondary.withOpacity(0.4),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.wifi_off_rounded, size: 20, color: cs.secondary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Messages stay inside this café',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.wifi_off_rounded, size: 20, color: Colors.blue),
-                SizedBox(width: 8),
-                Text(
-                  'No internet needed',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+
+            const SizedBox(height: 12),
+
+            // Tiny hint
+            Text(
+              'No internet. No cloud. Just your phones talking directly.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onBackground.withOpacity(0.55),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   void _showChatInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Chat Info'),
+        title: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: cs.primary),
+            const SizedBox(width: 8),
+            const Text('Chat details'),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow('Connected to', widget.device.name),
+            _buildInfoRow('Talking with', widget.device.name),
             const SizedBox(height: 12),
-            _buildInfoRow('Connection', 'Wi-Fi Direct (P2P)'),
+            _buildInfoRow('Link type', 'Wi-Fi Direct (phone-to-phone)'),
             const SizedBox(height: 12),
             _buildInfoRow('Messages', '${_messages.length}'),
             const SizedBox(height: 12),
-            _buildInfoRow('Reactions', '${_messages.fold<int>(0, (sum, msg) => sum + msg.reactions.length)}'),
+            _buildInfoRow(
+              'Reactions',
+              '${_messages.fold<int>(0, (sum, msg) => sum + msg.reactions.length)}',
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.cloud_off_rounded, size: 18, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Caflow keeps this chat offline. Messages travel only between '
+                      'your phones, not through café Wi-Fi or the cloud.',
+                      style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
@@ -595,11 +700,11 @@ class _ChatScreenWiFiState extends State<ChatScreenWiFi> {
   String _getStatusText() {
     switch (_status) {
       case ConnectionStatus.connected:
-        return 'Connected • Wi-Fi Direct';
+        return 'Connected here in the café';
       case ConnectionStatus.connecting:
-        return 'Connecting...';
+        return 'Linking phones…';
       default:
-        return 'Connection lost';
+        return 'Not connected';
     }
   }
 }
